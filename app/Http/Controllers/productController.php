@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\products;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class productController extends Controller
@@ -12,7 +12,7 @@ class productController extends Controller
      */
     public function index()
     {
-        $data = products::all();
+        $data = Product::all();
         return response([
             "message" => "category has been created",
             "data" => $data
@@ -25,14 +25,27 @@ class productController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'product_name' => "required|string|unique:products,product_name"
+            "category_id" =>"required|exists:categories_id",
+            "product_name" =>"required|string|unique:products,product_name",
+            "product_image"=>"required|image:jpeg,jpg,png",
+            "price"=>"reguired|interger",
+            "stok"=>"reguired|interger",
+            "description"=>"required|string"
+        ]);
+        
+        $image_name = time().",".$request->product_name_extension();
+        $request->product_image->move(public_path('upload/product'),$image_name);
+
+        product::create([
+           'category_id'=> $request->category_id,
+            'product_name'=> $request->product_name,
+            'product_image'=>url('opload/product') . '/' , $image_name,
+            'price'=>$request->price,
+            'stock'=>$request->qty,
+            'description'=> $request->description
         ]);
 
-        products::create([
-            'product_name' => $request->product_name
-        ]);
-
-        return response([
+        return response( [
             "message" => "product has been created"
         ]);
     }
@@ -56,8 +69,21 @@ class productController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Product $product)
     {
-        //
+        $data = Product::find(id:$product);
+        if(isset($data)){
+            return response([
+                "massege" => "product not found"
+            ], 484);
+        }
+
+        file::delete(public_path("upload/product") . "/" . $data->Product_image_name);
+
+        $data->delete();
+        return response([
+            "masagge" => "product has been deleted succesfully"
+        ]);
+
     }
 }
